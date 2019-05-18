@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# run as ./test unit|it|pattern [time to sleep on module startup]
+
+export WERKZEUG_RUN_MAIN=true
+RED='\033[0;36m'
+NC='\033[0m'
+
+function log() {
+    echo -e "${RED}====> Test runner: ${1}${NC}"
+}
+
+# kills script with failure code if last executed command was not successful
+function check_fail() {
+    if [ $? -ne 0 ]; then
+        log $1
+        exit 1
+    fi
+}
+
+# inject hosts file
+cp ./tests/fixtures/hosts.txt ./conf/hosts.txt
+
+function run_unit_tests() {
+    log "Running unit tests.."
+    python3.7 -m unittest discover -s tests.unit_tests
+    check_fail "Unit tests failed"
+    log "Unit tests done!"
+}
+
+function run_integration_tests() {
+    log "Running integration tests.."
+
+    # get all filenames of integration test files
+    test_files=( $(find tests/integration_tests -name "test_*.py") )
+
+    # run all integration tests individually, quit on first failure
+    for f in "${test_files[@]}"
+    do
+        log "Running ${f}"
+        python3.7 -m unittest $f
+        check_fail "Integration test ${f} failed"
+        log "Integration test ${f} passed!"
+    done
+
+    # all integration tests passed
+    log "Integration tests done!"
+}
+
+function run_test_by_pattern() {
+    log "Running test by pattern"
+    python3.7 -m unittest discover -s tests -p $1
+    check_fail "Test(s) failed"
+    log "Test(s) done!"
+}
+
+if [ $# -eq 0 ]; then
+    # run all tests
+    run_unit_tests
+    run_integration_tests
+elif [ $# -ge 1 ]; then
+    # if 2nd argument supplied, export env var INTEGRATION_TEST_SLEEP with $2 seconds to sleep when starting modules
+    if [ $# -eq 2 ]; then
+        export INTEGRATION_TEST_SLEEP=$2
+    fi
+
+    # run either integration tests, unit tests or tests matching pattern $1
+    if [ "$1" = "it" ]; then
+        run_integration_tests
+    elif [ "$1" = "unit" ]; then
+        run_unit_tests
+    else
+        run_test_by_pattern $1
+    fi
+fi
+
+exit 0

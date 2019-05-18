@@ -1,0 +1,99 @@
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+    <title>🌍BFTList Global view</title>
+
+    <style>
+        :root {
+            --blue: #326273;
+            --red: #c42f2f;
+            --white: white;
+            --light: #EEEEEE;
+            --node-side: 300px;
+        }
+
+        * {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 5px;
+            font-size: 1em;
+        }
+
+        #test-data {
+            margin-top: 20px;
+        }
+
+        #byz-control h4 {
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        .nodes-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 50px;
+        }
+
+        .node-wrapper {
+            flex-basis: 33%;
+            max-width: 33%;
+            margin: 25px 0;
+        }
+
+        .node {
+            width: var(--node-side);
+            height: var(--node-side);
+            margin: auto;
+            background-color: var(--blue);
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .crown {
+            position: absolute;
+            top: 0;
+            transform: translateY(-82%);
+            display: none;
+        }
+
+        .node.primary .crown {
+            display: block;
+        }
+
+        .node.byzantine {
+            background-color: var(--red)
+        }
+
+        .node > p:first-child { font-size: 1.5em; }
+        p { margin: 0; }
+        .node span {
+            margin-top: 10px;
+            font-size: 1.3em;
+        }
+
+        .data {
+            font-size: 1.2em;
+            background: var(--light);
+            max-width: 90%;
+            margin: 25px auto;
+            padding: 10px;
+            overflow: auto;
+        }
+    </style>
+</head>
