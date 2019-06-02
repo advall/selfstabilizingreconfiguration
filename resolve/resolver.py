@@ -89,6 +89,9 @@ class Resolver:
     
     def recsa_allow_reco(self):
         return self.modules[Module.RECSA_MODULE].allow_reco()
+
+    def recsa_participate(self):
+        return self.modules[Module.RECSA_MODULE].participate()
     
     # Helpers
 
@@ -136,6 +139,8 @@ class Resolver:
             self.modules[Module.RECSA_MODULE].receive_msg(msg)
         elif msg_type == MessageType.FAILURE_DETECTOR_MESSAGE:
             self.modules[Module.FAILURE_DETECTOR_MODULE].receive_msg(msg)
+        elif msg_type == MessageType.JOINING_MECHANISM_MESSAGE:
+            self.modules[Module.JOINING_MECHANISM_MODULE].receive_msg(msg)
         else:
             logger.error(f"Message with invalid type {msg_type} cannot be" +
                          " dispatched")
@@ -154,3 +159,6 @@ class Resolver:
 
     def get_recma_module_data(self):
         return self.modules[Module.RECMA_MODULE].get_data()
+
+    def get_joining_mechanism_module_data(self):
+        return self.modules[Module.JOINING_MECHANISM_MODULE].get_data()

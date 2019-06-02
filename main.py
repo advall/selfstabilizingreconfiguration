@@ -19,6 +19,7 @@ from api.server import start_server
 from modules.recma.module import RecMAModule
 from modules.recsa.module import RecSAModule
 from modules.fd.module import FDModule
+from modules.joining_mechanism.module import JoiningMechanismModule
 from resolve.enums import Module, SystemStatus
 from resolve.resolver import Resolver
 from metrics.latency_monitor import monitor_node_latencies
@@ -54,7 +55,8 @@ def start_modules(resolver):
     modules = {
         Module.RECMA_MODULE: RecMAModule(id, resolver, n),
         Module.RECSA_MODULE: RecSAModule(id, resolver, n),
-        Module.FAILURE_DETECTOR_MODULE: FDModule(id, resolver, n)
+        Module.FAILURE_DETECTOR_MODULE: FDModule(id, resolver, n),
+        Module.JOINING_MECHANISM_MODULE: JoiningMechanismModule(id, resolver, n)
     }
 
     resolver.set_modules(modules)

@@ -16,6 +16,7 @@ class Module(Enum):
     RECMA_MODULE = 1
     RECSA_MODULE = 2
     FAILURE_DETECTOR_MODULE = 3
+    JOINING_MECHANISM_MODULE = 4
 
 
 class Function(Enum):
@@ -30,3 +31,4 @@ class MessageType(IntEnum):
     RECMA_MESSAGE = 1
     RECSA_MESSAGE = 2
     FAILURE_DETECTOR_MESSAGE = 3
+    JOINING_MECHANISM_MESSAGE = 4
