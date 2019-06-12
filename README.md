@@ -1,4 +1,7 @@
 # SelfStabilizingReconfiguration
+[![Build status](https://travis-ci.org/axelniklasson/selfstabilizingreconfiguration.svg?branch=master)](https://travis-ci.org/travis-ci/travis-web)
+
+
 This repository contains a distributed system implementing self-stabilizing reconfiguration, as described by [Dolev, Georgiou, Marcoullis and Schiller](https://arxiv.org/abs/1606.00195). This repository is intended to be used together with [Thor](), which is used to boot up the system with all intended configuration.
 
 ## Set up
@@ -28,16 +31,16 @@ The code base is linted using [flake8](https://pypi.org/project/flake8/) with [p
 ```
 
 ### Travis integration
-Both linting and testing is setup to be run for all Pull Requests and on each push to master by Travis.
+Unit testing is setup to be run for all Pull Requests and on each push to master by Travis.
 
 ## System description
 
 ### Ports
 Each running node uses three ports: one for the API (default to `400{node_id}`), one for the main communication channel running over TCP with other nodes (`500{node_id}`), one for exposing metrics to the Prometheus scraper (`300{node_id}`) and lastly one for the self-stabilizing UDP communication channel (`700{node_id}`). Node with id `1` would therefore be using ports `3001`, `4001`, `5001` and `7001` for example. Note that port ranges `7000-->` was selected rather than `6000-->` since many firewalls on PlanetLab block port `6000` from being used.
 
-| Port number   | Service                       | 
-| ------------- |:-----------------------------:|
-| 300{ID}       | Prometheus metrics endpoint   |
-| 400{ID}       | REST API                      |
-| 500{ID}       | Inter-node communication      |
-| 700{ID}       | Inter-node communication      |
+| Port number   | Service                           | 
+| ------------- |:---------------------------------:|
+| 300{ID}       | Prometheus metrics endpoint       |
+| 400{ID}       | REST API                          |
+| 500{ID}       | TCP Inter-node communication      |
+| 700{ID}       | UDP Inter-node communication      |
