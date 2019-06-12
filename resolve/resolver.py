@@ -165,6 +165,9 @@ class Resolver:
     def get_joining_mechanism_module_data(self):
         return self.modules[Module.JOINING_MECHANISM_MODULE].get_data()
     
+    def get_abd_module_data(self):
+        return self.modules[Module.ABD_MODULE].get_data()
+    
     def abd_read(self):
         reg = self.modules[Module.ABD_MODULE].read()
         return 200, reg

@@ -15,7 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 class ABDModule:
-    """ABD module"""
+    """ABD module
+    
+    Implements SingleWriterMultiReader with read/write operations both using
+    communicate procedure as developed by Attiya et al. Value and label is
+    considered the same in this algorithm and it should be noted that the
+    writes are (for now) only incrementing the value in the register.
+    """
 
     def __init__(self, id, resolver, n):
         """Initializes the module."""
@@ -106,7 +112,7 @@ class ABDModule:
             self.send_msg(_msg, j)
         elif msg_type == constants.READ_CONFIRM:
             self.label = max(data["label"], self.label)
-            _msg = { "type": constants.READ_ACK }
+            _msg = { "type": constants.READ_CONFIRM_ACK }
             self.send_msg(_msg, j)
 
         if self.communicating:
@@ -123,3 +129,12 @@ class ABDModule:
             "data": data
         }
         self.resolver.send_to_node(j, msg)
+    
+    def get_data(self):
+        return {
+            "is_writer": self.id == 0,
+            "value": self.label,
+            "label": self.label,
+            "info": self.info,
+            "status": self.status
+        }

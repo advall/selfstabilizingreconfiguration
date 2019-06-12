@@ -62,7 +62,8 @@ def get_modules_data():
     data = {
         "node_id": int(os.getenv("ID")),
         "RECSA_MODULE": app.resolver.get_recsa_module_data(),
-        "RECMA_MODULE": app.resolver.get_recma_module_data()
+        "RECMA_MODULE": app.resolver.get_recma_module_data(),
+        "ABD_MODULE": app.resolver.get_abd_module_data()
     }
     return json.dumps(data, cls=SetEncoder)
 
