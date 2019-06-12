@@ -118,3 +118,21 @@ def render_recma_view():
     only be used when running integration test for that module.
     """
     return render_global_view("recma")
+
+
+@routes.route("/abd/read", methods=["GET"])
+def abd_read():
+    """Reads the ABD register and returns the its msg/label."""
+    status_code, register = app.resolver.abd_read()
+    return jsonify(register)
+
+@routes.route("/abd/write", methods=["POST"])
+def abd_write():
+    """If sent to node 0, message is written to the register and returned."""
+    status_code, data = app.resolver.abd_write()
+
+    return app.response_class(
+        response=data,
+        status=status_code,
+        mimetype="application/json"
+    )

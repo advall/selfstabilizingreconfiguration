@@ -326,7 +326,7 @@ class RecSAModule:
             else:
                 logger.debug(f"Node not a participant, not sending state")
 
-            logger.info(f"Another iteration of main RecSA loop completed") 
+            logger.debug(f"Another iteration of main RecSA loop completed") 
             time.sleep(RUN_SLEEP)
 
 
