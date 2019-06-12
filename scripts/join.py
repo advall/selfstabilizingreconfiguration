@@ -1,4 +1,13 @@
-"""Script used to start up a new node and let other nodes know about it."""
+"""Script used to start up a new node and let other nodes know about it.
+
+When the system is currently running, in order to have a new node join the
+network simply run this script such as
+
+python scripts.py http://NODE_IP:400{NODE_ID}
+
+where NODE is an existing, runnning node.
+
+"""
 
 import logging
 import sys
