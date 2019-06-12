@@ -1,4 +1,7 @@
 # SelfStabilizingReconfiguration
+[![Build status](https://travis-ci.org/axelniklasson/selfstabilizingreconfiguration.svg?branch=master)](https://travis-ci.org/travis-ci/travis-web)
+
+
 This repository contains a distributed system implementing self-stabilizing reconfiguration, as described by [Dolev, Georgiou, Marcoullis and Schiller](https://arxiv.org/abs/1606.00195). This repository is intended to be used together with [Thor](), which is used to boot up the system with all intended configuration.
 
 ## Set up
