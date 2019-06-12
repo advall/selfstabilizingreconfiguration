@@ -50,3 +50,18 @@ def get_start_state():
             return data
     except FileNotFoundError:
         return {}
+
+def add_node_to_hosts_file(new_node):
+    """Writes a line representing new node to the hosts file.
+
+    If running locally, only node 0 writes this file (avoid race cond).
+    """
+    n = get_nodes()[0]
+    _id = int(os.getenv("ID"))
+    if n.hostname == 'localhost':
+        if _id != 0:
+            return
+    hosts_path = os.getenv("HOSTS_PATH", "conf/hosts.txt")
+    logger.info(f"Writing new node {new_node} to hosts file")
+    with open(hosts_path, "a") as f:
+        f.write(f"{new_node.id},{new_node.hostname},{new_node.ip}, {new_node.port}\n")

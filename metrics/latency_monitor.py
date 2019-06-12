@@ -25,6 +25,9 @@ def monitor_node_latencies():
         return
 
     while True:
+        nodes = get_nodes()
+        other_nodes = {k: nodes[k] for k in nodes if k != ID and
+                    nodes[k].hostname != "localhost"}
         for n_id in other_nodes:
             node = nodes[n_id]
             try:

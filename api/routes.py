@@ -13,6 +13,7 @@ import jsonpickle
 # local
 import conf.config as conf
 import modules.byzantine as byz
+from communication.zeromq.node import Node
 
 # globals
 routes = Blueprint("routes", __name__)
@@ -118,3 +119,26 @@ def render_recma_view():
     only be used when running integration test for that module.
     """
     return render_global_view("recma")
+
+@routes.route("/nodes", methods=["GET"])
+def get_nodes_list():
+    """Returns a list of all nodes in the system.
+    
+    Used by joining script to have a new node join the system.
+    """
+    nodes = conf.get_nodes()
+    ns = {}
+    for n_id, n in nodes.items():
+        ns[n_id] = n.to_dct()
+    return jsonify(ns)
+
+@routes.route("/publish_node", methods=["POST"])
+def publish_node():
+    data = request.get_json()
+    new_node = Node(data['id'], data['hostname'], data['ip'], data['port'])
+    conf.add_node_to_hosts_file(new_node)
+
+    # re-fresh system to account for new, added node
+    app.resolver.refresh(new_node)
+
+    return jsonify(success=True)
