@@ -30,8 +30,6 @@ class JoiningMechanismModule:
 
     def flush_arrays(self):
         """Initializes all variables related to the application based on default values."""
-        logger.debug("reset_vars() was called. Not implemented yet.")
-        # TODO: Implement
         self.passs = {}
         self.state = {}
         for j in self.resolver.recsa_get_fd_j(self.id):
