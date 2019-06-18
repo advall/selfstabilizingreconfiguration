@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 HOST = "http://localhost"
 BASE_PORT = 4000
-N = 6
+N = 4
 F = 1
 RELATIVE_PATH_FIXTURES_HOST = "./tests/fixtures/hosts.txt"
 start_state_file_path = os.path.abspath("./conf/start_state.json")
@@ -66,7 +66,7 @@ def generate_hosts_file(n, path="./tests/fixtures"):
 
 
 # application runner helpers
-async def launch_bftlist(test_name="unknown test", n=N, f=F, args={}):
+async def launch_system(test_name="unknown test", n=N, f=F, args={}):
     """Launches BFTList for integration testing."""
     generate_hosts_file(n)
     nodes = get_nodes()
@@ -106,6 +106,15 @@ async def launch_bftlist(test_name="unknown test", n=N, f=F, args={}):
     await asyncio.sleep(int(sec) if sec is not None else 2)
     logger.info("Sleeping done, now resuming tests")
     return pids
+
+async def launch_joining_node():
+    """Launches a joining node through the join script."""
+    cmd = f"python scripts/join.py http://localhost:4000"
+    cwd = os.path.abspath(".")
+    env = os.environ.copy()
+
+    p = subprocess.Popen(cmd, shell=True, cwd=cwd, env=env)
+    return p.pid
 
 
 def kill(pids):
