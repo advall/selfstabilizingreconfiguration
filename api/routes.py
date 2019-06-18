@@ -67,6 +67,12 @@ def get_modules_data():
     }
     return json.dumps(data, cls=SetEncoder)
 
+@routes.route("/kill", methods=["POST"])
+def kill_node():
+    """Kills this node by killing the process."""
+    logger.info("/kill called, exiting")
+    os._exit(0)
+
 
 def fetch_data_for_all_nodes():
     """Fetches data from all nodes through their /data endpoint."""
