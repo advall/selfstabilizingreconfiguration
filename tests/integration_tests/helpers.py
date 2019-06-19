@@ -55,6 +55,14 @@ async def GET(node_id, path):
                          f"node {node_id} on {path}.")
     return {"status_code": r.status_code, "data": r.json()}
 
+async def POST(node_id, path, data={}):
+    """POSTS data from a nodes and returns the result to the caller."""
+    r = session().post(f"{HOST}:{BASE_PORT + node_id}{path}", data=bytes(jsonpickle.encode(data), "utf-8"))
+    if r.status_code != 200:
+        raise ValueError(f"Got bad response {r.status_code} from " +
+                         f"node {node_id} on {path}.")
+    return {"status_code": r.status_code, "data": r.json()}
+
 
 def generate_hosts_file(n, path="./tests/fixtures"):
     """Generates the hosts file to be used in the test."""
@@ -146,3 +154,11 @@ def get_json_for_r_log_entry(req, x_set):
         "request": req.to_dct(),
         "x_set": x_set
     }
+
+async def kill_node(id):
+    logger.info(f"Killing node {id}")
+    try:
+        res = await POST(id, "/kill")
+    except Exception as e:
+        print(e)
+        pass

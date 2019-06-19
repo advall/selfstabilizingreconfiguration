@@ -145,7 +145,7 @@ class RecSAModule:
         Used to replace the configuration by the RecMA module. Proposed set
         must be non-empty and not the same as current conf.
         """
-        logger.info("Running estab(set) with set:", s)
+        logger.info(f"Running estab(set) with set: {s}")
         if self.allow_reco() and (set(s) not in [set(), set(self.get_config_j(self.id))]):
             logger.info("estab() allowed!")
             self.prp[self.id] = (1, s)
