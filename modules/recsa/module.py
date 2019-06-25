@@ -223,6 +223,11 @@ class RecSAModule:
             self.prp[k] = constants.DFLT_NTF
         logger.info(f"Set config to {self.config}")
 
+    def prp_set(self, prp):
+        for k in range(self.number_of_nodes):
+            self.prp[k] = prp
+        logger.info(f"Set prp to {self.prp}")
+
     def increment(self, prp):
         (prp_phase, prp_set) = prp
         if prp_phase == 1:
@@ -339,7 +344,7 @@ class RecSAModule:
         """
         for k in self.prp.keys():
             if (self.get_prp_j(k)[0] == 0) and (self.get_prp_j(k)[1] != constants.BOTTOM):
-                logger.debug("Stale info (type 1) found!")
+                logger.info("Stale info (type 1) found!")
                 return True
         return False
 
@@ -353,7 +358,7 @@ class RecSAModule:
         bot_exists = constants.BOTTOM in config_values
         empty_exists = [] in config_values
         if bot_exists or empty_exists:
-            logger.debug(f"Stale info (type 2) found! Current config: {self.config}")
+            logger.info(f"Stale info (type 2) found! Current config: {self.config}")
         return bot_exists or empty_exists
 
     def stale_info_type_3(self):
@@ -381,7 +386,7 @@ class RecSAModule:
         type_3_c = exists_phase_2 and (len(prp_sets) > 1)
         type_3 = type_3_a or type_3_b or type_3_c
         if type_3:
-            logger.debug("Stale info (type 3) found!")
+            logger.info("Stale info (type 3) found!")
         return type_3
 
     def stale_info_type_4(self):
@@ -408,7 +413,7 @@ class RecSAModule:
                     type_4_c = False
         type_4 = type_4_a and type_4_b and type_4_c
         if type_4:
-            logger.debug("Stale info (type 4) found!")
+            logger.info("Stale info (type 4) found!")
         return type_4
 
     def no_ntf_arrived(self):

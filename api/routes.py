@@ -148,3 +148,18 @@ def publish_node():
     app.resolver.refresh(new_node)
 
     return jsonify(success=True)
+
+@routes.route("/inject_conf", methods=["POST"])
+def inject_conf():
+    payload = jsonpickle.decode(request.get_json())
+    conf = payload["conf"]
+    app.resolver.inject_conf(conf)
+    return jsonify(success=True)
+
+@routes.route("/inject_prp", methods=["POST"])
+def inject_prp():
+    payload = jsonpickle.decode(request.get_json())
+    phase = payload["phase"]
+    st = payload["set"]
+    app.resolver.inject_prp((phase, st))
+    return jsonify(success=True)

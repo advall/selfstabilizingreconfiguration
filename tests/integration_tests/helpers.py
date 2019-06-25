@@ -57,7 +57,7 @@ async def GET(node_id, path):
 
 async def POST(node_id, path, data={}):
     """POSTS data from a nodes and returns the result to the caller."""
-    r = session().post(f"{HOST}:{BASE_PORT + node_id}{path}", data=bytes(jsonpickle.encode(data), "utf-8"))
+    r = session().post(f"{HOST}:{BASE_PORT + node_id}{path}", json=jsonpickle.encode(data))
     if r.status_code != 200:
         raise ValueError(f"Got bad response {r.status_code} from " +
                          f"node {node_id} on {path}.")

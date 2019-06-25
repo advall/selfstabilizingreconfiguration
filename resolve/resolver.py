@@ -199,3 +199,11 @@ class Resolver:
         Thread(target=self.fd_senders[new_node.id].start).start()
 
         logger.info(f"System refreshed, now {len(self.nodes)} nodes in system")
+    
+    def inject_conf(self, new_conf):
+        """Helper used to inject a configuration in the RecSA module."""
+        return self.modules[Module.RECSA_MODULE].config_set(new_conf)
+
+    def inject_prp(self, new_prp):
+        """Helper used to inject a proposal in the RecSA module."""
+        return self.modules[Module.RECSA_MODULE].prp_set(new_prp)
