@@ -62,6 +62,7 @@ class RecMAModule:
         processors in its own FD.
         """
         fd_i_part = self.resolver.recsa_get_fd_part_j(self.id)
+        print(fd_i_part)
         if not fd_i_part:
             return []
         else:
