@@ -13,6 +13,7 @@ import jsonpickle
 # local
 import conf.config as conf
 import modules.byzantine as byz
+from communication.zeromq.node import Node
 
 # globals
 routes = Blueprint("routes", __name__)
@@ -67,6 +68,12 @@ def get_modules_data():
     }
     return json.dumps(data, cls=SetEncoder)
 
+@routes.route("/kill", methods=["POST"])
+def kill_node():
+    """Kills this node by killing the process."""
+    logger.info("/kill called, exiting")
+    os._exit(0)
+
 
 def fetch_data_for_all_nodes():
     """Fetches data from all nodes through their /data endpoint."""
@@ -120,7 +127,6 @@ def render_recma_view():
     """
     return render_global_view("recma")
 
-
 @routes.route("/abd/read", methods=["GET"])
 def abd_read():
     """Reads the ABD register and returns the its msg/label."""
@@ -132,8 +138,34 @@ def abd_write():
     """If sent to node 0, message is written to the register and returned."""
     status_code, data = app.resolver.abd_write()
 
-    return app.response_class(
-        response=data,
-        status=status_code,
-        mimetype="application/json"
-    )
+    if status_code != 200:
+        return app.response_class(
+            response=data,
+            status=status_code,
+            mimetype="application/json"
+        )
+    else:
+        return jsonify(data)
+
+@routes.route("/nodes", methods=["GET"])
+def get_nodes_list():
+    """Returns a list of all nodes in the system.
+    
+    Used by joining script to have a new node join the system.
+    """
+    nodes = conf.get_nodes()
+    ns = {}
+    for n_id, n in nodes.items():
+        ns[n_id] = n.to_dct()
+    return jsonify(ns)
+
+@routes.route("/publish_node", methods=["POST"])
+def publish_node():
+    data = request.get_json()
+    new_node = Node(data['id'], data['hostname'], data['ip'], data['port'])
+    conf.add_node_to_hosts_file(new_node)
+
+    # re-fresh system to account for new, added node
+    app.resolver.refresh(new_node)
+
+    return jsonify(success=True)

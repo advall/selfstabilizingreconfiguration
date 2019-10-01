@@ -206,6 +206,11 @@ class RecSAModule:
         return {self.degree(k), self.degree(k_prime)} in ok_deg_tups
 
     def echo_no_all(self, k):
+        """Tests whether p_i was acked by all participants for the values it has sent.
+        
+        Considers just the fields that are related to its own participant set
+        and notification.
+        """
         same_fd_part = set(self.get_fd_part_j(self.id)) == set(self.get_echo_part_j(k))
         (phase_i, set_i) = self.get_prp_j(self.id)
         (phase_k, set_k) = self.get_echo_prp_j(k)
@@ -213,17 +218,28 @@ class RecSAModule:
         return same_fd_part and same_prp
 
     def echo_fun(self, k):
+        """Tests whether p_k was acked by all participants for the values it has sent.
+        
+        Considers the fields that are related to its own participant set
+        and notification as well as all[].
+        """
         same_all = self.my_alll(self.id) == self.get_echo_all_j(k)
         ok_deg = ((self.degree(k) - self.degree(self.id)) % 6) in {0, 1}
         return self.echo_no_all(k) and same_all and ok_deg
 
     def config_set(self, val):
+        """Wrapper to modify config of this processor.
+
+        Acts as a wrapper function for accessing pi’s local copies of the field config.
+        This macro also makes sure that there are no (local) active notifications.
+        """
         for k in range(self.number_of_nodes):
             self.config[k] = val
             self.prp[k] = constants.DFLT_NTF
         logger.info(f"Set config to {self.config}")
 
     def increment(self, prp):
+        """Performs the transition between phases of the delicate reconfiguration."""
         (prp_phase, prp_set) = prp
         if prp_phase == 1:
             return ((2, prp_set), False)
@@ -233,10 +249,18 @@ class RecSAModule:
             return (self.get_prp_j(self.id), self.get_all_j(self.id))
 
     def all_seen_fun(self):
+        """Tests whether all active participants have noticed that all other participants
+        have finished the current phase.
+        """
         return self.get_all_j(self.id) and \
                (set(self.get_fd_part_j(self.id)) <= (self.all_seen | {self.id}))
 
     def mod_max(self):
+        """Returns maximum phase value of two processors considering mod 3 operations.
+
+        Assumes that no two processors in FD[i].part have two notifications that p_i
+        stores for which the degree differs by more than one.
+        """
         phs = set()
         for k in self.get_fd_part_j(self.id):
             phs.add(self.get_prp_j(k)[0])
@@ -247,6 +271,10 @@ class RecSAModule:
             return self.get_prp_j(self.id)[0]
 
     def max_ntf(self):
+        """Selects notification with maximal lexicographical value.
+        
+        Returns BOTTOM in the absence of notification that is not phase 0 notification.
+        """
         deg_diffs = set()
         for k in self.get_fd_part_j(self.id):
             deg_diff = (self.degree(k) - self.degree(self.id)) % 6
@@ -260,7 +288,7 @@ class RecSAModule:
             return (self.mod_max(), max_lex_set)
 
     def run(self, testing=False):
-        """ The main loop of the Reconfiguration Stability Assurance module"""
+        """The main loop of the Reconfiguration Stability Assurance module"""
 
         # block until system is ready
         while not testing and not self.resolver.system_running():

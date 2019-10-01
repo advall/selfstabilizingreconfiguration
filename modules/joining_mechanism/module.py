@@ -28,12 +28,15 @@ class JoiningMechanismModule:
         self.state = {}  # Dict where key is id and value is an application state
         self.passs = {}  # Dict where key is id and value is bool
 
-    def reset_vars(self):
+    def flush_arrays(self):
         """Initializes all variables related to the application based on default values."""
-        logger.debug("reset_vars() was called. Not implemented yet.")
-        # TODO: Implement
+        self.passs = {}
+        self.state = {}
+        for j in self.resolver.recsa_get_fd_j(self.id):
+            self.passs[j] = False
+            self.state[j] = BOTTOM
 
-    def init_vars(self):
+    def init_vars(self, state):
         """Initializes all variables related to the application based on the
         states exchanged with the configuration members."""
         logger.debug("init_vars() was called. Not implemented yet.")
@@ -52,27 +55,26 @@ class JoiningMechanismModule:
         while not testing and not self.resolver.system_running():
             time.sleep(0.1)
 
-        self.passs = {}
-        for j in self.resolver.recsa_get_fd_j(self.id):
-            self.passs[j] = False
+        self.flush_arrays()
 
         while True:
             # Algorithm 3.3 in the technical report
-            if self.id not in self.resolver.recsa_get_fd_part_j(self.id):
-                self.reset_vars()
-                while self.id not in self.resolver.recsa_get_fd_part_j(self.id):
-                    com_conf = self.resolver.recsa_get_config()
-                    if com_conf in [NOT_PARTICIPANT, BOTTOM]:
-                        com_conf = {}
-                    num_trusted_member_passes = len(
-                        [j for j in com_conf if j in self.resolver.recsa_get_fd_j(self.id) and self.passs[j] == True])
-                    if self.resolver.recsa_allow_reco() and num_trusted_member_passes > (len(com_conf) / 2):
-                        self.init_vars()
-                        logger.info("Calling participate()")
-                        self.resolver.recsa_participate()
-                    for j in com_conf:
+            while self.id not in self.resolver.recsa_get_fd_part_j(self.id):
+                cur_conf = self.resolver.recsa_get_config()
+                if cur_conf in [NOT_PARTICIPANT, BOTTOM]:
+                    cur_conf = {}
+                num_trusted_member_passes = len(
+                    [j for j in cur_conf if j in self.resolver.recsa_get_fd_j(self.id) and self.passs[j] == True])
+                if self.resolver.recsa_allow_reco() and num_trusted_member_passes > (len(cur_conf) / 2):
+                    self.init_vars(self.state)
+                    logger.info("Calling participate()")
+                    self.resolver.recsa_participate()
+                elif not self.resolver.recsa_allow_reco():
+                    self.flush_arrays()
+                if self.resolver.recsa_allow_reco():
+                    for j in cur_conf:
                         self.send_join_request(j)
-                    time.sleep(RUN_SLEEP)
+                time.sleep(RUN_SLEEP)
             time.sleep(RUN_SLEEP)
 
     def receive_msg(self, msg):

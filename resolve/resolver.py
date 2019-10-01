@@ -6,12 +6,15 @@ from threading import Thread
 import os
 import requests
 import time
+import asyncio
 
 # local
 from resolve.enums import Module, MessageType, SystemStatus
 from conf.config import get_nodes
 from communication.zeromq import rate_limiter
 from metrics.messages import msgs_sent
+from communication.zeromq.sender import Sender
+from communication.udp.sender import Sender as FDSender
 
 # globals
 logger = logging.getLogger(__name__)
@@ -117,9 +120,9 @@ class Resolver:
         if node_id not in self.senders and node_id not in self.fd_senders:
             logger.error(f"Non-existing sender for node {node_id}")
 
+        sender = (self.senders[node_id] if not fd_msg else
+                  self.fd_senders[node_id])
         try:
-            sender = (self.senders[node_id] if not fd_msg else
-                      self.fd_senders[node_id])
             sender.add_msg_to_queue(msg_dct)
         except Exception as e:
             logger.error(f"Something went wrong when sending msg {msg_dct} " +
@@ -178,3 +181,36 @@ class Resolver:
             return 400, { "ERROR": "BAD_REQUEST" }
         reg = self.modules[Module.ABD_MODULE].write()
         return 200, reg
+    def run_sender_in_new_thread(self, new_node):
+        # set up new sender
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self.senders[new_node.id] = Sender(id, new_node, self.on_message_sent)
+        loop.create_task(self.senders[new_node.id].start())
+        loop.run_forever()
+        loop.close()
+    
+    def refresh(self, new_node):
+        """Called by API when a new node has been added to the system.
+        
+        Sets up communication channels etc.
+        """
+        self.nodes = get_nodes()
+
+        # update modules
+        self.modules[Module.RECMA_MODULE].number_of_nodes = len(self.nodes)
+        self.modules[Module.RECSA_MODULE].number_of_nodes = len(self.nodes)
+        self.modules[Module.FAILURE_DETECTOR_MODULE].number_of_nodes = len(self.nodes)
+        self.modules[Module.FAILURE_DETECTOR_MODULE].beat += [0]
+        self.modules[Module.JOINING_MECHANISM_MODULE].number_of_nodes = len(self.nodes)
+
+        Thread(target=self.run_sender_in_new_thread, args=(new_node,)).start()
+
+        # set up new fd sender
+        new_fd_sender = FDSender(id, (new_node.hostname, 7000 + new_node.id),
+                              check_ready=self.system_running,
+                              on_message_sent=self.on_message_sent)
+        self.fd_senders[new_node.id] = new_fd_sender
+        Thread(target=self.fd_senders[new_node.id].start).start()
+
+        logger.info(f"System refreshed, now {len(self.nodes)} nodes in system")
