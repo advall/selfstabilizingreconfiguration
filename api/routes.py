@@ -63,7 +63,8 @@ def get_modules_data():
     data = {
         "node_id": int(os.getenv("ID")),
         "RECSA_MODULE": app.resolver.get_recsa_module_data(),
-        "RECMA_MODULE": app.resolver.get_recma_module_data()
+        "RECMA_MODULE": app.resolver.get_recma_module_data(),
+        "ABD_MODULE": app.resolver.get_abd_module_data()
     }
     return json.dumps(data, cls=SetEncoder)
 
@@ -125,6 +126,26 @@ def render_recma_view():
     only be used when running integration test for that module.
     """
     return render_global_view("recma")
+
+@routes.route("/abd/read", methods=["GET"])
+def abd_read():
+    """Reads the ABD register and returns the its msg/label."""
+    status_code, register = app.resolver.abd_read()
+    return jsonify(register)
+
+@routes.route("/abd/write", methods=["POST"])
+def abd_write():
+    """If sent to node 0, message is written to the register and returned."""
+    status_code, data = app.resolver.abd_write()
+
+    if status_code != 200:
+        return app.response_class(
+            response=data,
+            status=status_code,
+            mimetype="application/json"
+        )
+    else:
+        return jsonify(data)
 
 @routes.route("/nodes", methods=["GET"])
 def get_nodes_list():

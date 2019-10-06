@@ -144,6 +144,8 @@ class Resolver:
             self.modules[Module.FAILURE_DETECTOR_MODULE].receive_msg(msg)
         elif msg_type == MessageType.JOINING_MECHANISM_MESSAGE:
             self.modules[Module.JOINING_MECHANISM_MODULE].receive_msg(msg)
+        elif msg_type == MessageType.ABD_MESSAGE:
+            self.modules[Module.ABD_MODULE].receive_msg(msg)
         else:
             logger.error(f"Message with invalid type {msg_type} cannot be" +
                          " dispatched")
@@ -166,6 +168,19 @@ class Resolver:
     def get_joining_mechanism_module_data(self):
         return self.modules[Module.JOINING_MECHANISM_MODULE].get_data()
     
+    def get_abd_module_data(self):
+        return self.modules[Module.ABD_MODULE].get_data()
+    
+    def abd_read(self):
+        reg = self.modules[Module.ABD_MODULE].read()
+        return 200, reg
+    
+    def abd_write(self):
+        if self.id != 0:
+            logger.error("Only node 0 is considered a writer")
+            return 400, { "ERROR": "BAD_REQUEST" }
+        reg = self.modules[Module.ABD_MODULE].write()
+        return 200, reg
     def run_sender_in_new_thread(self, new_node):
         # set up new sender
         loop = asyncio.new_event_loop()

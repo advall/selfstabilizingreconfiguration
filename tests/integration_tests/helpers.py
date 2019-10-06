@@ -66,7 +66,7 @@ def generate_hosts_file(n, path="./tests/fixtures"):
 
 
 # application runner helpers
-async def launch_bftlist(test_name="unknown test", n=N, f=F, args={}):
+async def launch_system(test_name="unknown test", n=N, f=F, args={}):
     """Launches BFTList for integration testing."""
     generate_hosts_file(n)
     nodes = get_nodes()
