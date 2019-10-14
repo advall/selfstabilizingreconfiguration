@@ -77,7 +77,13 @@ class Resolver:
         if self.system_running():
             return self.modules[Module.FAILURE_DETECTOR_MODULE].get_trusted()
         return []
-    
+
+    def fd_reset_monitor(self, j):
+        return self.modules[Module.FAILURE_DETECTOR_MODULE].reset_monitor(j)
+
+    def fd_stable_monitor(self, j):
+        return self.modules[Module.FAILURE_DETECTOR_MODULE].stable_monitor(j)
+
     def recsa_get_fd_j(self, j):
         return self.modules[Module.RECSA_MODULE].get_fd_j(j)
 

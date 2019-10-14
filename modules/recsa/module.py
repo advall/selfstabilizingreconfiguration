@@ -24,13 +24,8 @@ class RecSAModule:
         self.number_of_nodes = n
         self.msgs_sent = 0
 
-        # fallback to set init_config to node not being a participant
-        # if init_config is None:
-        # TODO port the whole first_booter logic to this setup
-        init_config = {self.id: constants.BOTTOM}
-
         # Algorithm variables:
-        self.config = init_config  # Dictionary where key is an id and value is a config (list)
+        self.config = {}  # Dictionary where key is an id and value is a config (list)
         self.fd = {self.id: self.resolver.fd_get_trusted()}  # Dictionary where key is an id and value is a list of trusted ids
         self.fd_part = {self.id: []}  # Dictionary where key is an id and value is a list of trusted participants
         self.echo_part = {}
@@ -39,6 +34,14 @@ class RecSAModule:
         self.prp = {}  # Dictionary where key is an id and value is tuple (phase, set). set='BOTTOM' indicates 'no proposal'
         self.alll = {}  # Dictionary where key is an id and value is a Boolean
         self.all_seen = set()  # Set of id k for which p_i received the alll[k] indication
+        for k in range(self.number_of_nodes):
+            self.config[k] = constants.NOT_PARTICIPANT
+            self.prp[k] = constants.DFLT_NTF
+            self.alll[k] = False
+            self.echo_part[k] = self.get_fd_part_j(k)
+            self.echo_prp[k] = constants.DFLT_NTF
+            self.echo_all[k] = False
+
 
     # GETTERS for safe access to local dictionary variables:
 
@@ -302,9 +305,11 @@ class RecSAModule:
             # line 22:
             trusted = self.get_fd_part_j(self.id)
             for k in range(self.number_of_nodes):
-                if k not in trusted:
+                if (k not in trusted) and \
+                        ((self.get_config_j(k) != constants.NOT_PARTICIPANT) or (self.get_prp_j(k) != constants.DFLT_NTF)):
                     self.config[k] = constants.NOT_PARTICIPANT
                     self.prp[k] = constants.DFLT_NTF
+                    self.resolver.fd_reset_monitor(k)
 
             # line 23:
             self.prp[self.id] = self.max_ntf()
@@ -323,9 +328,10 @@ class RecSAModule:
 
             # line 24:
             if self.stale_info_type_1() or \
-                self.stale_info_type_2() or \
-                self.stale_info_type_3() or \
-                self.stale_info_type_4():
+                    self.stale_info_type_2() or \
+                    self.stale_info_type_3() or \
+                    self.stale_info_type_4() or \
+                    self.no_participants_and_stable_fd_monitors():
                 self.config_set(constants.BOTTOM)
 
             # lines 27-32:
@@ -435,6 +441,16 @@ class RecSAModule:
         if type_4:
             logger.debug("Stale info (type 4) found!")
         return type_4
+
+    def no_participants_and_stable_fd_monitors(self):
+        """Tests if we are in the special state where there are no participants and all FD monitors are stable"""
+        if len(self.get_fd_j(self.id)) < 1:
+            return False
+        for k in self.get_fd_j(self.id):
+            if (not self.resolver.fd_stable_monitor(k)) or (self.get_config_j(k) != constants.NOT_PARTICIPANT):
+                return False
+        logger.debug("There are no participants and all FD monitors are stable!")
+        return True
 
     def no_ntf_arrived(self):
         ntf_arrived = False
