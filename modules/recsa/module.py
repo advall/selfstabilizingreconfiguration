@@ -426,14 +426,11 @@ class RecSAModule:
                 different_fd_part = self.get_fd_part_j(self.id) != self.get_fd_part_j(k)
                 if different_fd or different_fd_part:
                     type_4_a = False
-        type_4_b = self.get_config_j(self.id) != constants.BOTTOM
-        if self.get_config_j(self.id) in [constants.BOTTOM, constants.NOT_PARTICIPANT]:
-            type_4_c = True
-        else:
-            type_4_c = True
-            for k in self.get_fd_part_j(self.id):
-                if k in self.get_config_j(self.id):
-                    type_4_c = False
+        type_4_b = self.get_config_j(self.id) not in [constants.BOTTOM, constants.NOT_PARTICIPANT]
+        type_4_c = True
+        for k in self.get_fd_part_j(self.id):
+            if k in self.get_config_j(self.id):
+                type_4_c = False
         type_4 = type_4_a and type_4_b and type_4_c
         if type_4:
             logger.debug("Stale info (type 4) found!")
