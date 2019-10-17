@@ -68,7 +68,7 @@ class TestNewNodeJoins(AbstractIntegrationTest):
         logger.info(f"{__name__} starting")
         pids = helpers.run_coro(self.bootstrap())
         joining_node_pid = helpers.run_coro(self.launch_joining_node())
-        pids = pids.append(joining_node_pid)
+        pids.append(joining_node_pid)
 
         super().set_pids(pids)
 
