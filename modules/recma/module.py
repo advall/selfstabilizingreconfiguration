@@ -62,6 +62,7 @@ class RecMAModule:
         processors in its own FD.
         """
         fd_i_part = self.resolver.recsa_get_fd_part_j(self.id)
+        print(fd_i_part)
         if not fd_i_part:
             return []
         else:
@@ -141,7 +142,7 @@ class RecMAModule:
             else:
                 logger.debug(f"RecMA did not perform its loop because not participant. Participants: {self.resolver.recsa_get_fd_part_j(self.id)}")
 
-            logger.info(f"Another iteration of main RecMA loop completed") 
+            logger.debug(f"Another iteration of main RecMA loop completed") 
             time.sleep(RUN_SLEEP)
 
     def receive_msg(self, msg):

@@ -24,13 +24,8 @@ class RecSAModule:
         self.number_of_nodes = n
         self.msgs_sent = 0
 
-        # fallback to set init_config to node not being a participant
-        # if init_config is None:
-        # TODO port the whole first_booter logic to this setup
-        init_config = {self.id: constants.BOTTOM}
-
         # Algorithm variables:
-        self.config = init_config  # Dictionary where key is an id and value is a config (list)
+        self.config = {}  # Dictionary where key is an id and value is a config (list)
         self.fd = {self.id: self.resolver.fd_get_trusted()}  # Dictionary where key is an id and value is a list of trusted ids
         self.fd_part = {self.id: []}  # Dictionary where key is an id and value is a list of trusted participants
         self.echo_part = {}
@@ -39,6 +34,14 @@ class RecSAModule:
         self.prp = {}  # Dictionary where key is an id and value is tuple (phase, set). set='BOTTOM' indicates 'no proposal'
         self.alll = {}  # Dictionary where key is an id and value is a Boolean
         self.all_seen = set()  # Set of id k for which p_i received the alll[k] indication
+        for k in range(self.number_of_nodes):
+            self.config[k] = constants.NOT_PARTICIPANT
+            self.prp[k] = constants.DFLT_NTF
+            self.alll[k] = False
+            self.echo_part[k] = self.get_fd_part_j(k)
+            self.echo_prp[k] = constants.DFLT_NTF
+            self.echo_all[k] = False
+
 
     # GETTERS for safe access to local dictionary variables:
 
@@ -206,6 +209,11 @@ class RecSAModule:
         return {self.degree(k), self.degree(k_prime)} in ok_deg_tups
 
     def echo_no_all(self, k):
+        """Tests whether p_i was acked by all participants for the values it has sent.
+        
+        Considers just the fields that are related to its own participant set
+        and notification.
+        """
         same_fd_part = set(self.get_fd_part_j(self.id)) == set(self.get_echo_part_j(k))
         (phase_i, set_i) = self.get_prp_j(self.id)
         (phase_k, set_k) = self.get_echo_prp_j(k)
@@ -213,11 +221,21 @@ class RecSAModule:
         return same_fd_part and same_prp
 
     def echo_fun(self, k):
+        """Tests whether p_k was acked by all participants for the values it has sent.
+        
+        Considers the fields that are related to its own participant set
+        and notification as well as all[].
+        """
         same_all = self.my_alll(self.id) == self.get_echo_all_j(k)
         ok_deg = ((self.degree(k) - self.degree(self.id)) % 6) in {0, 1}
         return self.echo_no_all(k) and same_all and ok_deg
 
     def config_set(self, val):
+        """Wrapper to modify config of this processor.
+
+        Acts as a wrapper function for accessing pi’s local copies of the field config.
+        This macro also makes sure that there are no (local) active notifications.
+        """
         for k in range(self.number_of_nodes):
             self.config[k] = val
             self.prp[k] = constants.DFLT_NTF
@@ -229,6 +247,7 @@ class RecSAModule:
         logger.info(f"Set prp to {self.prp}")
 
     def increment(self, prp):
+        """Performs the transition between phases of the delicate reconfiguration."""
         (prp_phase, prp_set) = prp
         if prp_phase == 1:
             return ((2, prp_set), False)
@@ -238,10 +257,18 @@ class RecSAModule:
             return (self.get_prp_j(self.id), self.get_all_j(self.id))
 
     def all_seen_fun(self):
+        """Tests whether all active participants have noticed that all other participants
+        have finished the current phase.
+        """
         return self.get_all_j(self.id) and \
                (set(self.get_fd_part_j(self.id)) <= (self.all_seen | {self.id}))
 
     def mod_max(self):
+        """Returns maximum phase value of two processors considering mod 3 operations.
+
+        Assumes that no two processors in FD[i].part have two notifications that p_i
+        stores for which the degree differs by more than one.
+        """
         phs = set()
         for k in self.get_fd_part_j(self.id):
             phs.add(self.get_prp_j(k)[0])
@@ -252,6 +279,10 @@ class RecSAModule:
             return self.get_prp_j(self.id)[0]
 
     def max_ntf(self):
+        """Selects notification with maximal lexicographical value.
+        
+        Returns BOTTOM in the absence of notification that is not phase 0 notification.
+        """
         deg_diffs = set()
         for k in self.get_fd_part_j(self.id):
             deg_diff = (self.degree(k) - self.degree(self.id)) % 6
@@ -265,7 +296,7 @@ class RecSAModule:
             return (self.mod_max(), max_lex_set)
 
     def run(self, testing=False):
-        """ The main loop of the Reconfiguration Stability Assurance module"""
+        """The main loop of the Reconfiguration Stability Assurance module"""
 
         # block until system is ready
         while not testing and not self.resolver.system_running():
@@ -279,9 +310,11 @@ class RecSAModule:
             # line 22:
             trusted = self.get_fd_part_j(self.id)
             for k in range(self.number_of_nodes):
-                if k not in trusted:
+                if (k not in trusted) and \
+                        ((self.get_config_j(k) != constants.NOT_PARTICIPANT) or (self.get_prp_j(k) != constants.DFLT_NTF)):
                     self.config[k] = constants.NOT_PARTICIPANT
                     self.prp[k] = constants.DFLT_NTF
+                    self.resolver.fd_reset_monitor(k)
 
             # line 23:
             self.prp[self.id] = self.max_ntf()
@@ -300,9 +333,10 @@ class RecSAModule:
 
             # line 24:
             if self.stale_info_type_1() or \
-                self.stale_info_type_2() or \
-                self.stale_info_type_3() or \
-                self.stale_info_type_4():
+                    self.stale_info_type_2() or \
+                    self.stale_info_type_3() or \
+                    self.stale_info_type_4() or \
+                    self.no_participants_and_stable_fd_monitors():
                 self.config_set(constants.BOTTOM)
 
             # lines 27-32:
@@ -331,7 +365,7 @@ class RecSAModule:
             else:
                 logger.debug(f"Node not a participant, not sending state")
 
-            logger.info(f"Another iteration of main RecSA loop completed") 
+            logger.debug(f"Another iteration of main RecSA loop completed") 
             time.sleep(RUN_SLEEP)
 
 
@@ -403,18 +437,25 @@ class RecSAModule:
                 different_fd_part = self.get_fd_part_j(self.id) != self.get_fd_part_j(k)
                 if different_fd or different_fd_part:
                     type_4_a = False
-        type_4_b = self.get_config_j(self.id) != constants.BOTTOM
-        if self.get_config_j(self.id) in [constants.BOTTOM, constants.NOT_PARTICIPANT]:
-            type_4_c = True
-        else:
-            type_4_c = True
-            for k in self.get_fd_part_j(self.id):
-                if k in self.get_config_j(self.id):
-                    type_4_c = False
+        type_4_b = self.get_config_j(self.id) not in [constants.BOTTOM, constants.NOT_PARTICIPANT]
+        type_4_c = True
+        for k in self.get_fd_part_j(self.id):
+            if k in self.get_config_j(self.id):
+                type_4_c = False
         type_4 = type_4_a and type_4_b and type_4_c
         if type_4:
             logger.info("Stale info (type 4) found!")
         return type_4
+
+    def no_participants_and_stable_fd_monitors(self):
+        """Tests if we are in the special state where there are no participants and all FD monitors are stable"""
+        if len(self.get_fd_j(self.id)) < 1:
+            return False
+        for k in self.get_fd_j(self.id):
+            if (not self.resolver.fd_stable_monitor(k)) or (self.get_config_j(k) != constants.NOT_PARTICIPANT):
+                return False
+        logger.debug("There are no participants and all FD monitors are stable!")
+        return True
 
     def no_ntf_arrived(self):
         ntf_arrived = False

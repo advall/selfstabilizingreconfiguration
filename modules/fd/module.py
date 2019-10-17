@@ -30,6 +30,7 @@ class FDModule:
         self.id = id
         self.number_of_nodes = n
         self.beat = [0 for i in range(n)]
+        self.monitor = [0 for i in range(n)]
         self.cnt = 0
         self.cur_check_req = []
         self.fd_set = set()
@@ -85,6 +86,9 @@ class FDModule:
         self.beat[processor_j] = 0
         self.beat[self.id] = 0
 
+        self.monitor[processor_j] = min(self.monitor[processor_j] + 1, 3)
+        self.monitor[self.id] = min(self.monitor[processor_j] + 1, 3)
+
         new_fd_set = {processor_j, self.id}
         for other_processor in range(self.number_of_nodes):
             if other_processor == self.id or other_processor == processor_j:
@@ -99,6 +103,7 @@ class FDModule:
         """Resets local variables."""
         logger.debug("Reset Failure Detector")
         self.beat = [0 for i in range(self.number_of_nodes)]
+        self.monitor = [0 for i in range(self.number_of_nodes)]
         self.cnt = 0
         self.cur_check_req = []
 
@@ -106,6 +111,13 @@ class FDModule:
     def get_trusted(self):
         """Returns the set of trusted processors."""
         return self.fd_set
+
+    def reset_monitor(self, processor_j):
+        """Resets the FD monitor counter for a specified processor"""
+        self.monitor[processor_j] = 0
+
+    def stable_monitor(self, processor_j):
+        return self.monitor[processor_j] == 3
 
     # Functions to send messages to other nodes
     def send_msg(self, processor_j):
