@@ -429,23 +429,20 @@ class RecSAModule:
         Tests that there are active participants in the config
         """
         if self.get_fd_part_j(self.id) == []:
-            type_4_a = False
+            return False
         else:
-            type_4_a = True
             for k in self.get_fd_part_j(self.id):
                 different_fd = self.get_fd_j(self.id) != self.get_fd_j(k)
                 different_fd_part = self.get_fd_part_j(self.id) != self.get_fd_part_j(k)
                 if different_fd or different_fd_part:
-                    type_4_a = False
-        type_4_b = self.get_config_j(self.id) not in [constants.BOTTOM, constants.NOT_PARTICIPANT]
-        type_4_c = True
+                    return False
+        if self.get_config_j(self.id) in [constants.BOTTOM, constants.NOT_PARTICIPANT]:
+            return False
         for k in self.get_fd_part_j(self.id):
             if k in self.get_config_j(self.id):
-                type_4_c = False
-        type_4 = type_4_a and type_4_b and type_4_c
-        if type_4:
-            logger.info("Stale info (type 4) found!")
-        return type_4
+                return False
+        logger.info("Stale info (type 4) found!")
+        return True
 
     def no_participants_and_stable_fd_monitors(self):
         """Tests if we are in the special state where there are no participants and all FD monitors are stable"""
