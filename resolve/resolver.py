@@ -208,6 +208,7 @@ class Resolver:
         self.modules[Module.RECSA_MODULE].number_of_nodes = len(self.nodes)
         self.modules[Module.FAILURE_DETECTOR_MODULE].number_of_nodes = len(self.nodes)
         self.modules[Module.FAILURE_DETECTOR_MODULE].beat += [0]
+        self.modules[Module.FAILURE_DETECTOR_MODULE].monitor += [0]
         self.modules[Module.JOINING_MECHANISM_MODULE].number_of_nodes = len(self.nodes)
 
         Thread(target=self.run_sender_in_new_thread, args=(new_node,)).start()
