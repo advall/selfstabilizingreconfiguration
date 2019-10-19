@@ -110,7 +110,7 @@ def setup_metrics():
         logger.error(f"Could not setup metrics. Got error: {e}")
 
     # start latency monitor in other thread
-    Thread(target=monitor_node_latencies).start()
+    # Thread(target=monitor_node_latencies).start()
 
 
 def setup_logging():
