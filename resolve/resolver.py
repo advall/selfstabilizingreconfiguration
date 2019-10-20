@@ -214,7 +214,7 @@ class Resolver:
         Thread(target=self.run_sender_in_new_thread, args=(new_node,)).start()
 
         # set up new fd sender
-        new_fd_sender = FDSender(id, (new_node.hostname, 7000 + new_node.id),
+        new_fd_sender = FDSender(self.id, (new_node.hostname, 7000 + new_node.id),
                               check_ready=self.system_running,
                               on_message_sent=self.on_message_sent)
         self.fd_senders[new_node.id] = new_fd_sender
