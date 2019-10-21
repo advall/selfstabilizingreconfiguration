@@ -28,6 +28,9 @@ class JoiningMechanismModule:
         self.state = {}  # Dict where key is id and value is an application state
         self.passs = {}  # Dict where key is id and value is bool
 
+    def get_pass_j(self, j):
+        return self.passs[j] if j in self.passs.keys() else False
+
     def flush_arrays(self):
         """Initializes all variables related to the application based on default values."""
         self.passs = {}
@@ -64,7 +67,7 @@ class JoiningMechanismModule:
                 if cur_conf in [NOT_PARTICIPANT, BOTTOM]:
                     cur_conf = {}
                 num_trusted_member_passes = len(
-                    [j for j in cur_conf if j in self.resolver.recsa_get_fd_j(self.id) and self.passs[j] == True])
+                    [j for j in cur_conf if j in self.resolver.recsa_get_fd_j(self.id) and self.get_pass_j(j) == True])
                 if self.resolver.recsa_allow_reco() and num_trusted_member_passes > (len(cur_conf) / 2):
                     self.init_vars(self.state)
                     logger.info("Calling participate()")
