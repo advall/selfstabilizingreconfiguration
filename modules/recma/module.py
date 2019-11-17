@@ -113,7 +113,7 @@ class RecMAModule:
                         len([j for j in cur_config if j in self.resolver.recsa_get_fd_j(self.id)]) \
                         < ((len(cur_config) // 2) + 1)
                     if self.no_maj[self.id]:
-                        logger.debug("no_maj detected! Here is everyones no_maj:",
+                        logger.info("no_maj detected! Here is everyones no_maj:",
                                 self.no_maj)
 
                     # lines 14-16:
@@ -126,7 +126,7 @@ class RecMAModule:
                     else:
                         self.need_reconf[self.id] = self.eval_config(cur_config)
                         if self.need_reconf[self.id]:
-                            logger.debug("need_reconf detected! Here is everyones need_reconf:",
+                            logger.info("need_reconf detected! Here is everyones need_reconf:",
                                     self.need_reconf)
                         if self.get_need_reconf_j(self.id) and \
                             (len([j for j in cur_config if
@@ -139,10 +139,7 @@ class RecMAModule:
                 # line 20:
                 for j in self.resolver.recsa_get_fd_part_j(self.id):
                     self.send_state(j)
-            else:
-                logger.debug(f"RecMA did not perform its loop because not participant. Participants: {self.resolver.recsa_get_fd_part_j(self.id)}")
 
-            logger.debug(f"Another iteration of main RecMA loop completed") 
             time.sleep(RUN_SLEEP)
 
     def receive_msg(self, msg):

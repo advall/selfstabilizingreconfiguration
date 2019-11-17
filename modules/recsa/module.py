@@ -260,7 +260,7 @@ class RecSAModule:
         """Tests whether all active participants have noticed that all other participants
         have finished the current phase.
         """
-        return self.get_all_j(self.id) and \
+        return (self.get_all_j(self.id) or (self.get_config_j(self.id) == constants.NOT_PARTICIPANT)) and \
                (set(self.get_fd_part_j(self.id)) <= (self.all_seen | {self.id}))
 
     def mod_max(self):
@@ -271,7 +271,8 @@ class RecSAModule:
         """
         phs = set()
         for k in self.get_fd_part_j(self.id):
-            phs.add(self.get_prp_j(k)[0])
+            if self.get_config_j(k) != constants.NOT_PARTICIPANT:
+                phs.add(self.get_prp_j(k)[0])
         if (1 in phs) and (2 not in phs) and (self.get_prp_j(self.id)[0] != max(phs)):
             self.all_seen = set()
             return max(phs)
@@ -292,7 +293,8 @@ class RecSAModule:
         else:
             max_lex_set = constants.BOTTOM
             for k in self.get_fd_part_j(self.id):
-                max_lex_set = self.max_lex(max_lex_set, self.get_prp_j(k)[1])
+                if self.get_config_j(k) != constants.NOT_PARTICIPANT:
+                    max_lex_set = self.max_lex(max_lex_set, self.get_prp_j(k)[1])
             return (self.mod_max(), max_lex_set)
 
     def run(self, testing=False):
@@ -339,10 +341,17 @@ class RecSAModule:
                     self.no_participants_and_stable_fd_monitors():
                 self.config_set(constants.BOTTOM)
 
+            # line XX:
+
+            if self.allow_reco() and self.exists_participant_with_sharp_as_config():
+                self.prp[self.id] = (1, self.get_config_j(self.id))
+                self.alll[self.id] = False
+                self.all_seen = set()
+
             # lines 27-32:
             if self.no_ntf_arrived():
                 if self.config_conflict():
-                    logger.debug("Stale info (config conflict) found!")
+                    logger.info("Stale info (config conflict) found!")
                     self.config_set(constants.BOTTOM)
                 if (self.get_config_j(self.id) == constants.BOTTOM) and self.fds_stabilized():
                     self.config_set(self.get_fd_j(self.id))
@@ -359,13 +368,9 @@ class RecSAModule:
                         self.all_seen = set()
 
             # line 33:
-            if self.get_config_j(self.id) != constants.NOT_PARTICIPANT:
-                for j in self.get_fd_j(self.id):
-                    self.send_state(j)
-            else:
-                logger.debug(f"Node not a participant, not sending state")
+            for j in self.get_fd_j(self.id):
+                self.send_state(j)
 
-            logger.debug(f"Another iteration of main RecSA loop completed") 
             time.sleep(RUN_SLEEP)
 
 
@@ -406,21 +411,25 @@ class RecSAModule:
         prp_sets = []
         exists_phase_2 = False
         for k in self.get_fd_part_j(self.id):
-            if not self.corr_deg(self.id, k):
-                type_3_a = True
-            if self.get_prp_j(k)[0] == ((self.get_prp_j(self.id)[0] + 1) % 3):
-                type_3_b_set.add(k)
-            prp_k_set = self.get_prp_j(k)[1]
-            if (prp_k_set != constants.BOTTOM) and \
-                  (set(prp_k_set) not in prp_sets):
-                prp_sets.append(set(prp_k_set))
-            if self.get_prp_j(k)[0] == 2:
-                exists_phase_2 = True
+            if self.get_config_j(k) != constants.NOT_PARTICIPANT:
+                if not self.corr_deg(self.id, k):
+                    type_3_a = True
+                    logger.debug(f"bad degree combination: node {self.id} has degree {self.degree(self.id)} and node "
+                                 f"{k} has degree {self.degree(k)}")
+                if self.get_prp_j(k)[0] == ((self.get_prp_j(self.id)[0] + 1) % 3):
+                    type_3_b_set.add(k)
+                prp_k_set = self.get_prp_j(k)[1]
+                if (prp_k_set != constants.BOTTOM) and \
+                      (set(prp_k_set) not in prp_sets):
+                    prp_sets.append(set(prp_k_set))
+                if self.get_prp_j(k)[0] == 2:
+                    exists_phase_2 = True
         type_3_b = not (type_3_b_set <= self.all_seen)
         type_3_c = exists_phase_2 and (len(prp_sets) > 1)
         type_3 = type_3_a or type_3_b or type_3_c
         if type_3:
             logger.info("Stale info (type 3) found!")
+            logger.info(f"subtypes: {type_3_a} {type_3_b} {type_3_c}")
         return type_3
 
     def stale_info_type_4(self):
@@ -451,8 +460,14 @@ class RecSAModule:
         for k in self.get_fd_j(self.id):
             if (not self.resolver.fd_stable_monitor(k)) or (self.get_config_j(k) != constants.NOT_PARTICIPANT):
                 return False
-        logger.debug("There are no participants and all FD monitors are stable!")
+        logger.info("There are no participants and all FD monitors are stable!")
         return True
+
+    def exists_participant_with_sharp_as_config(self):
+        for k in self.get_fd_part_j(self.id):
+            if self.get_config_j(k) == constants.NOT_PARTICIPANT:
+                return True
+        return False
 
     def no_ntf_arrived(self):
         ntf_arrived = False
@@ -474,9 +489,9 @@ class RecSAModule:
         fd_i = set(self.get_fd_j(self.id))
         for j in self.get_fd_j(self.id):
             if set(self.fd.get(j, [])) != fd_i:
-                logger.debug("FDs have not stabilized")
+                logger.info("FDs have not stabilized")
                 return False
-        logger.debug("FDs have stabilized!")
+        logger.info("FDs have stabilized!")
         return True
 
     def max_lex(self, s1, s2):

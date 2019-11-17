@@ -53,11 +53,13 @@ class JoiningMechanismModule:
 
     def run(self, testing=False):
         """The main loop of the Joining Mechanism module."""
+        logger.info("Entered joining mechanism")
 
         # block until system is ready
         while not testing and not self.resolver.system_running():
             time.sleep(0.1)
 
+        logger.info("Joining mechanism running")
         self.flush_arrays()
 
         while True:
