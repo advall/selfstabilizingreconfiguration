@@ -55,8 +55,8 @@ class ABDModule:
 
         # get highest label
         label = -1
-        for j in range(1, len(self.info)):
-            if self.info[j] > label:
+        for j in self.resolver.recsa_get_config_app():
+            if isinstance(self.info.get(j, -1), int) and (self.info.get(j, -1) > label):
                 label = self.info[j]
         self.label = label
         
@@ -86,14 +86,13 @@ class ABDModule:
         self.communicate_msg = msg
         logger.info(f"Communicating msg {msg} to other nodes")
 
-        for j in range(self.number_of_nodes):
+        for j in self.resolver.recsa_get_config_app():
             self.status[j] = constants.NOT_ACKED
             self.info[j] = constants.BOT
             self.send_msg(msg, j)
         
         # busy-wait until no_acks > (n + 1) / 2
-        # TODO tie this together with reconfiguration
-        while self.no_acks < (self.number_of_nodes + 1) / 2:
+        while self.no_acks < (len(self.resolver.recsa_get_config_app()) + 1) / 2:
             time.sleep(1)
         self.communicating = False
 
@@ -101,6 +100,9 @@ class ABDModule:
         """Called whenever a message is received from another processor."""
         j = msg["sender"]
         data = msg["data"]
+
+        if j not in self.resolver.recsa_get_config_app():
+            return
 
         msg_type = data["type"]
         if msg_type == constants.WRITE:

@@ -15,6 +15,7 @@ from communication.zeromq import rate_limiter
 from metrics.messages import msgs_sent
 from communication.zeromq.sender import Sender
 from communication.udp.sender import Sender as FDSender
+import modules.constants as constants
 
 # globals
 logger = logging.getLogger(__name__)
@@ -92,6 +93,9 @@ class Resolver:
     
     def recsa_get_config(self):
         return self.modules[Module.RECSA_MODULE].get_config()
+
+    def recsa_get_config_app(self):
+        return self.modules[Module.RECSA_MODULE].get_config_app()
     
     def recsa_estab(self, s):
         return self.modules[Module.RECSA_MODULE].estab(s)
@@ -178,6 +182,12 @@ class Resolver:
         return self.modules[Module.ABD_MODULE].get_data()
     
     def abd_read(self):
+        if self.recsa_get_config_app() == constants.BOTTOM:
+            logger.error("Can't read during brute force reconfiguration")
+            return 500, { "ERROR": "INTERNAL_SERVER_ERROR" }
+        if self.id not in self.recsa_get_config_app():
+            logger.error("Only configuration members can read")
+            return 400, { "ERROR": "BAD_REQUEST" }
         reg = self.modules[Module.ABD_MODULE].read()
         return 200, reg
     
@@ -185,6 +195,9 @@ class Resolver:
         if self.id != 0:
             logger.error("Only node 0 is considered a writer")
             return 400, { "ERROR": "BAD_REQUEST" }
+        if self.recsa_get_config_app() == constants.BOTTOM:
+            logger.error("Can't write during brute force reconfiguration")
+            return 500, { "ERROR": "INTERNAL_SERVER_ERROR" }
         reg = self.modules[Module.ABD_MODULE].write()
         return 200, reg
     def run_sender_in_new_thread(self, new_node):
